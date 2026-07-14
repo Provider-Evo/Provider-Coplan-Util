@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entropy CodingPlan - Admin</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <link rel="stylesheet" href="/static/plugins/provider-coplan-util/styles/coplan.css">
+</head>
+<body>
+<div id="app">
+  <div v-if="!token" class="login-screen">
+    <div class="login-toolbar">
+      <button class="btn btn-sm btn-outline" type="button" @click="goPortalHome">{{ t('dash.backHome') }}</button>
+      <div class="login-toolbar-actions">
+      <button class="btn btn-sm btn-outline coplan-locale-btn" type="button" @click="toggleLocale">{{ locale === 'en' ? '中文' : 'EN' }}</button>
+      <button class="btn btn-sm btn-outline coplan-theme-btn" type="button" :aria-label="t('nav.theme')"><span class="coplan-theme-icon">&#9790;</span></button>
+      </div>
+    </div>
+    <div class="login-box">
+      <h1>Entropy CodingPlan</h1>
+      <p>{{ t('admin.login') }}</p>
+      <div v-if="loginError" class="error-text">{{ loginError }}</div>
+      <input v-model="loginForm.username" class="coplan-input" :placeholder="t('auth.username')" @keyup.enter="doLogin" />
+      <input v-model="loginForm.password" class="coplan-input" type="password" :placeholder="t('auth.password')" @keyup.enter="doLogin" />
+      <button class="btn btn-primary btn-block" @click="doLogin" :disabled="loading">{{ t('auth.login') }}</button>
+    </div>
+  </div>
+
+  <div v-else class="admin-layout">
+    <aside class="sidebar" :class="{ collapsed: sidebarCollapsed }">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-text">
+          <h2>Entropy</h2><span>{{ t('admin.title') }}</span>
+        </div>
+        <button class="btn btn-sm btn-outline coplan-theme-btn" type="button" :aria-label="t('nav.theme')"><span class="coplan-theme-icon">&#9790;</span></button>
+        <button class="toggle-btn" type="button" @click="sidebarCollapsed = !sidebarCollapsed" :aria-label="sidebarCollapsed ? 'Expand' : 'Collapse'">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+      </div>
+      <div class="nav-item" :class="{ active: page === 'dashboard' }" @click="page = 'dashboard'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span>{{ t('admin.overview') }}</span>
+      </div>
+      <div class="nav-item" :class="{ active: page === 'groups' }" @click="page = 'groups'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <span>{{ t('admin.groups') }}</span>
+      </div>
+      <div class="nav-item" :class="{ active: page === 'market' }" @click="page = 'market'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span>{{ t('admin.market') }}</span>
+      </div>
+      <div class="nav-item" :class="{ active: page === 'plans' }" @click="page = 'plans'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span>{{ t('admin.plans') }}</span>
+      </div>
+      <div class="nav-item" :class="{ active: page === 'models' }" @click="page = 'models'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+        <span>{{ t('admin.models') }}</span>
+      </div>
+      <div class="nav-item" :class="{ active: page === 'settings' }" @click="page = 'settings'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span>{{ t('admin.settings') }}</span>
+      </div>
+      <div class="nav-spacer"></div>
+      <div class="nav-item nav-item-logout" @click="doLogout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span>{{ t('admin.logout') }}</span>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="admin-topbar">
+        <button class="btn btn-sm btn-outline" type="button" @click="goPortalHome">{{ t('dash.backHome') }}</button>
+        <button class="btn btn-sm btn-outline coplan-locale-btn" type="button" @click="toggleLocale">{{ locale === 'en' ? '中文' : 'EN' }}</button>
+      </div>
+
+      <div v-if="page === 'dashboard'">
+        <div class="page-header"><h1>{{ t('admin.overview') }}</h1><p>{{ t('admin.status') }}</p></div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-label">{{ t('admin.stat.groups') }}</div><div class="stat-value">{{ groupCount }}</div></div>
+          <div class="stat-card"><div class="stat-label">{{ t('admin.stat.market') }}</div><div class="stat-value">{{ marketCount }}</div></div>
+          <div class="stat-card"><div class="stat-label">{{ t('admin.stat.plans') }}</div><div class="stat-value">{{ plans.filter(function(p){ return p.is_active; }).length }}</div></div>
+          <div class="stat-card"><div class="stat-label">{{ t('admin.stat.keys') }}</div><div class="stat-value">{{ keyCount }}</div></div>
+          <div class="stat-card"><div class="stat-label">{{ t('admin.stat.contact') }}</div><div class="stat-value stat-value-sm">{{ settings.admin_contact || 'Entropy' }}</div></div>
+        </div>
+      </div>
+
+      <div v-if="page === 'groups'">
+        <div class="page-header"><h1>{{ t('admin.groups') }}</h1><p>{{ t('admin.groupsHintPython') }}</p></div>
+        <div class="card mb-16">
+          <div class="card-title mb-16">{{ t('admin.newGroup') }}</div>
+          <CoplanField v-model="newGroupName" :label="t('admin.groupName')" placeholder="staging" />
+          <CoplanField v-model="newGroupDesc" :label="t('admin.groupDesc')" :placeholder="t('common.optional')" />
+          <button class="btn btn-primary" @click="createGroup" :disabled="loading">{{ t('admin.create') }}</button>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>{{ t('admin.col.name') }}</th><th>{{ t('admin.col.id') }}</th><th>{{ t('admin.col.source') }}</th><th>{{ t('admin.col.alias') }}</th><th>{{ t('admin.col.routes') }}</th><th>{{ t('admin.col.keys') }}</th><th>{{ t('admin.col.actions') }}</th></tr></thead>
+              <tbody>
+                <tr v-for="g in groups" :key="g.id">
+                  <td><strong>{{ g.name }}</strong><div class="text-muted text-sm">{{ g.description || '-' }}</div></td>
+                  <td class="mono text-sm">{{ (g.spec && g.spec.id) || g.id }}</td>
+                  <td><span class="badge" :class="g.source === 'code' ? 'badge-blue' : 'badge-gray'">{{ g.source === 'code' ? t('admin.source.code') : t('admin.source.runtime') }}</span></td>
+                  <td>{{ g.alias_count || 0 }}</td>
+                  <td>{{ g.route_count || 0 }}</td>
+                  <td>{{ (g.keys || []).length }}</td>
+                  <td>
+                    <div class="flex-gap">
+                      <button class="btn btn-sm btn-outline" @click="openGroupCode(g)">{{ g.source === 'code' ? t('admin.viewCode') : t('admin.editCode') }}</button>
+                      <button class="btn btn-sm btn-outline" @click="openGroupKeys(g)">{{ t('admin.keys') }}</button>
+                      <button class="btn btn-sm btn-outline" @click="publishGroup(g)">{{ t('admin.marketPublish') }}</button>
+                      <button class="btn btn-sm btn-danger" @click="deleteGroup(g)" :disabled="g.source === 'code'">{{ t('admin.delete') }}</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-if="!groups.length" class="empty-state text-sm">{{ t('admin.noGroups') }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="page === 'market'">
+        <div class="page-header"><h1>{{ t('admin.market') }}</h1><p>{{ t('admin.marketHint') }}</p></div>
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>{{ t('admin.col.name') }}</th><th>{{ t('admin.col.author') }}</th><th>{{ t('admin.col.alias') }}</th><th>{{ t('admin.col.routes') }}</th><th>{{ t('admin.col.forks') }}</th><th>{{ t('admin.col.actions') }}</th></tr></thead>
+              <tbody>
+                <tr v-for="entry in marketEntries" :key="entry.id">
+                  <td><strong>{{ entry.title }}</strong><div class="text-muted text-sm">{{ entry.description || '-' }}</div></td>
+                  <td class="text-sm">{{ entry.author || '-' }}</td>
+                  <td>{{ entry.alias_count || 0 }}</td>
+                  <td>{{ entry.route_count || 0 }}</td>
+                  <td>{{ entry.fork_count || 0 }}</td>
+                  <td>
+                    <div class="flex-gap">
+                      <button class="btn btn-sm btn-outline" @click="openMarketSpec(entry)">{{ t('admin.viewCode') }}</button>
+                      <button class="btn btn-sm btn-primary" @click="forkMarketEntry(entry)">{{ t('admin.marketFork') }}</button>
+                      <button class="btn btn-sm btn-danger" @click="deleteMarketEntry(entry)">{{ t('admin.delete') }}</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-if="!marketEntries.length" class="empty-state text-sm">{{ t('admin.noMarket') }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="page === 'plans'">
+        <div class="page-header"><h1>{{ t('admin.plans') }}</h1><p>{{ t('admin.plansHint') }}</p></div>
+        <div class="mb-16"><button class="btn btn-primary" @click="openPlanModal()">{{ t('admin.newPlan') }}</button></div>
+        <div class="stats-grid">
+          <div v-for="p in plans" :key="p.id" class="card card-flat">
+            <div class="card-header">
+              <span class="card-title">{{ p.name }}</span>
+              <span class="badge" :class="p.is_active ? 'badge-green' : 'badge-red'">{{ p.is_active ? t('admin.enabled') : t('admin.disabled') }}</span>
+            </div>
+            <div class="text-sm">
+              <div class="plan-price-lg">¥{{ p.price }}</div>
+              <div class="text-muted mt-8">{{ p.description }}</div>
+              <div class="mt-8">{{ t('pricing.requests5h', { n: p.requests_per_5h }) }} | {{ t('pricing.requestsMonth', { n: p.requests_per_month }) }}</div>
+              <div class="mt-8" v-if="p.strategy_id || p.entry_alias">
+                <span class="badge badge-blue">{{ p.strategy_id || '-' }} / {{ p.entry_alias || '-' }}</span>
+              </div>
+              <div class="mt-8">
+                <div class="text-muted text-xs mb-4">{{ t('admin.planModels') }}:</div>
+                <div class="model-chips">
+                  <span v-for="m in getPlanModels(p)" :key="m" class="model-chip selected model-chip-readonly">{{ m }}</span>
+                  <span v-if="!getPlanModels(p).length" class="text-muted text-sm">{{ t('admin.allModels') }}</span>
+                </div>
+              </div>
+              <div class="mt-8">
+                <div class="text-muted text-xs mb-4">{{ t('admin.planBenefits') }}:</div>
+                <div class="model-chips">
+                  <span v-for="f in parseFeatures(p.features)" :key="f" class="model-chip selected model-chip-readonly">{{ f }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex-gap mt-16">
+              <button class="btn btn-sm btn-outline" @click="openPlanModal(p)">{{ t('admin.edit') }}</button>
+              <button class="btn btn-sm btn-danger" @click="deletePlan(p)">{{ t('admin.delete') }}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="page === 'models'">
+        <div class="page-header"><h1>{{ t('admin.models') }}</h1><p>{{ t('admin.modelsHint') }}</p></div>
+        <div class="mb-16"><button class="btn btn-primary" @click="openModelModal()">{{ t('admin.newModel') }}</button></div>
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ID</th><th>{{ t('admin.col.modelId') }}</th><th>{{ t('admin.col.displayName') }}</th><th>{{ t('admin.col.description') }}</th><th>{{ t('admin.col.sort') }}</th><th>{{ t('admin.col.status') }}</th><th>{{ t('admin.col.actions') }}</th></tr></thead>
+              <tbody>
+                <tr v-for="m in models" :key="m.model_id">
+                  <td>{{ m.id }}</td>
+                  <td class="mono text-sm">{{ m.model_id }}</td>
+                  <td><strong>{{ m.display_name }}</strong></td>
+                  <td class="text-muted text-sm">{{ m.description || '-' }}</td>
+                  <td>{{ m.sort_order }}</td>
+                  <td><span class="badge" :class="m.is_active ? 'badge-green' : 'badge-red'">{{ m.is_active ? t('admin.enabled') : t('admin.disabled') }}</span></td>
+                  <td>
+                    <div class="flex-gap">
+                      <button class="btn btn-sm btn-outline" @click="toggleModel(m)">{{ m.is_active ? t('admin.disable') : t('admin.enable') }}</button>
+                      <button class="btn btn-sm btn-danger" @click="deleteModel(m)">{{ t('admin.delete') }}</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-if="!models.length" class="empty-state text-sm">{{ t('admin.noModels') }}</div>
+          </div>
+        </div>
+        <div class="page-header mt-16"><h2 class="text-lg">{{ t('admin.routesTitle') }}</h2><p>{{ t('admin.routesHint') }}</p></div>
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>{{ t('admin.col.clientAlias') }}</th><th>{{ t('admin.col.strategy') }}</th><th>{{ t('admin.col.platform') }}</th><th>{{ t('admin.col.model') }}</th><th>{{ t('admin.col.group') }}</th></tr></thead>
+              <tbody>
+                <tr v-for="m in routeModels" :key="m.id">
+                  <td class="mono text-sm">{{ m.alias }}</td>
+                  <td><span class="badge badge-gray">{{ m.strategy }}</span></td>
+                  <td class="mono text-sm">{{ m.platform || '-' }}</td>
+                  <td class="mono text-sm">{{ m.model }}</td>
+                  <td class="text-muted text-sm">{{ m.group_name }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-if="!routeModels.length" class="empty-state text-sm">{{ t('admin.noRoutes') }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="page === 'settings'">
+        <div class="page-header"><h1>{{ t('admin.settings') }}</h1><p>{{ t('admin.settingsHint') }}</p></div>
+        <div class="card settings-card">
+          <CoplanField v-model="settingsForm.admin_contact" :label="t('admin.adminContact')" :placeholder="t('admin.contactPlaceholder')" />
+          <button class="btn btn-primary" @click="saveSettings" :disabled="loading">{{ t('admin.save') }}</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <CoplanDialog v-model="showPlanModal" :title="editingPlan ? t('admin.editPlan') : t('admin.newPlan')" size="wide">
+    <CoplanField v-model="planForm.name" :label="t('admin.planName')" placeholder="Pro" />
+    <CoplanField v-model="planForm.price" type="number" :label="t('admin.planPrice')" />
+    <CoplanField v-model="planForm.requests_per_5h" type="number" :label="t('admin.plan5h')" />
+    <CoplanField v-model="planForm.requests_per_month" type="number" :label="t('admin.planMonth')" />
+    <CoplanField v-model="planForm.description" type="textarea" :label="t('admin.col.description')" :rows="3" />
+    <CoplanField v-model="planForm.strategy_id" :label="t('admin.planStrategyId')" placeholder="default" />
+    <CoplanField v-model="planForm.entry_alias" :label="t('admin.planEntryAlias')" placeholder="auto" />
+    <div class="coplan-field">
+      <label class="coplan-label">{{ t('admin.planModels') }}</label>
+      <div class="model-chips">
+        <span v-for="m in models.filter(function(x){ return x.is_active; })" :key="m.model_id" class="model-chip" :class="{ selected: planForm.selectedModels.includes(m.model_id) }" @click="toggleModelSelection(m.model_id)">{{ m.display_name }}</span>
+      </div>
+      <div class="text-muted text-sm mt-8">{{ planForm.selectedModels.length ? planForm.selectedModels.join(', ') : t('admin.allModels') }}</div>
+    </div>
+    <CoplanField v-model="planForm.featuresText" type="textarea" :label="t('admin.planBenefits')" :rows="4" :placeholder="t('admin.planBenefitsHint')" />
+    <template v-slot:footer>
+      <button class="btn btn-sm btn-outline" type="button" @click="showPlanModal = false">{{ t('dialog.cancel') }}</button>
+      <button class="btn btn-sm btn-primary" type="button" @click="savePlan" :disabled="loading">{{ t('admin.save') }}</button>
+    </template>
+  </CoplanDialog>
+
+  <CoplanDialog v-model="showModelModal" :title="t('admin.newModel')">
+    <CoplanField v-model="modelForm.model_id" :label="t('admin.col.modelId')" placeholder="qwen-plus" />
+    <CoplanField v-model="modelForm.display_name" :label="t('admin.col.displayName')" placeholder="Qwen Plus" />
+    <CoplanField v-model="modelForm.description" :label="t('admin.col.description')" />
+    <CoplanField v-model="modelForm.sort_order" type="number" :label="t('admin.col.sort')" />
+    <template v-slot:footer>
+      <button class="btn btn-sm btn-outline" type="button" @click="showModelModal = false">{{ t('dialog.cancel') }}</button>
+      <button class="btn btn-sm btn-primary" type="button" @click="saveModel" :disabled="loading">{{ t('admin.save') }}</button>
+    </template>
+  </CoplanDialog>
+
+  <CoplanDialog v-model="showMarketSpecModal" :title="t('admin.marketCodeTitle') + ' — ' + (marketSpecTarget?.title || '')" size="wide">
+    <CoplanField v-model="marketSpecText" type="textarea" :label="t('admin.strategyPython')" :rows="18" input-class="mono spec-textarea" :readonly="true" />
+    <template v-slot:footer>
+      <button class="btn btn-sm btn-outline" type="button" @click="showMarketSpecModal = false">{{ t('admin.close') }}</button>
+    </template>
+  </CoplanDialog>
+
+  <CoplanDialog v-model="showCodeModal" :title="(codeReadonly ? t('admin.viewCode') : t('admin.editCode')) + ' — ' + (codeTarget?.name || '')" size="wide">
+    <div class="text-sm text-muted mb-16" v-if="codeTarget?.source === 'code'">
+      {{ t('admin.specCodeHint', { file: codeTarget?.source_file || 'strategies/' }) }}
+    </div>
+    <div class="text-sm text-muted mb-16 coplan-hint-text" v-else>{{ t('admin.strategyPythonHint') }}</div>
+    <CoplanField
+      v-model="strategyCode"
+      type="textarea"
+      :label="t('admin.strategyPython')"
+      :rows="16"
+      input-class="mono spec-textarea"
+      :readonly="codeReadonly"
+    />
+    <CoplanField
+      v-model="compiledSpecText"
+      type="textarea"
+      :label="t('admin.compiledSpec')"
+      :rows="8"
+      input-class="mono spec-textarea"
+      :readonly="true"
+    />
+    <template v-slot:footer>
+      <button class="btn btn-sm btn-outline" type="button" @click="showCodeModal = false">{{ t('admin.close') }}</button>
+      <button v-if="!codeReadonly" class="btn btn-sm btn-outline" type="button" @click="validateStrategyCode" :disabled="loading">{{ t('admin.validateCompile') }}</button>
+      <button v-if="!codeReadonly" class="btn btn-sm btn-primary" type="button" @click="saveStrategyCode" :disabled="loading">{{ t('admin.strategySaveCompile') }}</button>
+    </template>
+  </CoplanDialog>
+
+  <CoplanDialog v-model="showKeysModal" :title="t('admin.groupKeys') + ' - ' + (keysTarget?.name || '')">
+    <div v-if="newKey" class="card mb-16 key-reveal-card">
+      <div class="text-sm key-reveal-title">{{ t('admin.newKeyHint') }}</div>
+      <div class="mono text-sm mt-8 key-reveal-body">{{ newKey }}</div>
+    </div>
+    <div class="text-sm text-muted mb-16">{{ t('admin.keysHint', { id: (keysTarget?.spec && keysTarget.spec.id) || keysTarget?.id || '-' }) }}</div>
+    <div class="mb-16"><button class="btn btn-sm btn-primary" type="button" @click="generateKey" :disabled="loading">{{ t('admin.genKey') }}</button></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>{{ t('dash.keyCol') }}</th><th>{{ t('dash.labelCol') }}</th><th>{{ t('dash.actionsCol') }}</th></tr></thead>
+        <tbody>
+          <tr v-for="k in userKeys" :key="k.id">
+            <td class="mono text-sm">{{ k.key }}</td>
+            <td class="text-sm">{{ k.label || '-' }}</td>
+            <td><button class="btn btn-sm btn-danger" type="button" @click="deleteKey(k)">{{ t('admin.delete') }}</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div v-if="!userKeys.length" class="empty-state text-sm">{{ t('admin.noKeys') }}</div>
+    <template v-slot:footer>
+      <button class="btn btn-sm btn-outline" type="button" @click="showKeysModal = false">{{ t('admin.close') }}</button>
+    </template>
+  </CoplanDialog>
+</div>
+
+<script src="/static/plugins/provider-coplan-util/scripts/vendor/coplan-i18n.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/coplan-ui.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/coplan-vue-ui.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/coplan-theme.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/coplan-admin.js"></script>
+</body>
+</html>

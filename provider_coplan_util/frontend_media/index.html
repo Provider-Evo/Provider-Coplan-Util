@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entropy CodingPlan</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/static/plugins/provider-coplan-util/styles/coplan.css">
+</head>
+<body>
+<div id="app">
+  <nav class="navbar">
+    <div class="navbar-brand" @click="navigate('home')">
+      Entropy CodingPlan<span>{{ t('brand.subtitle') }}</span>
+    </div>
+    <div class="navbar-actions">
+      <button class="btn btn-sm btn-outline coplan-locale-btn" type="button" @click="toggleLocale" :title="t('nav.locale')">
+        {{ locale === 'en' ? '中文' : 'EN' }}
+      </button>
+      <button class="btn btn-sm btn-outline coplan-theme-btn" type="button" :aria-label="t('nav.theme')" :title="t('nav.theme')">
+        <span class="coplan-theme-icon">&#9790;</span>
+      </button>
+      <button class="btn btn-sm btn-outline" type="button" onclick="window.location.href='/coplan/admin'">{{ t('nav.admin') }}</button>
+      <template v-if="!token">
+        <button class="btn btn-sm btn-outline" @click="navigate('login')">{{ t('nav.login') }}</button>
+        <button class="btn btn-sm btn-primary" @click="navigate('register')">{{ t('nav.register') }}</button>
+      </template>
+      <template v-else>
+        <button class="btn btn-sm btn-outline" @click="navigate('dashboard')">{{ t('nav.dashboard') }}</button>
+        <button class="btn btn-sm btn-outline" @click="doLogout">{{ t('nav.logout') }}</button>
+      </template>
+    </div>
+  </nav>
+
+  <!-- Home -->
+  <div v-if="currentPage === 'home'">
+    <div class="landing-hero">
+      <h1 class="animate-in"><span>Entropy</span>CodingPlan</h1>
+      <p class="animate-in delay-1">{{ heroTagline }}</p>
+    </div>
+
+    <div class="agents-section animate-in delay-2" v-if="agentTrack.length">
+      <h3>{{ agentsTitle }}</h3>
+      <div class="agents-track-wrapper">
+        <div class="agents-track">
+          <img v-for="(a, i) in agentTrack" :key="i + '-' + a.name" :src="a.logo_url" :alt="a.name" class="agent-logo" loading="lazy" />
+        </div>
+      </div>
+      <p v-if="platforms.length" class="text-sm text-muted coplan-platforms-hint">
+        {{ t('home.platforms') }}：{{ platforms.join(' · ') }}
+      </p>
+    </div>
+
+    <div class="advantages-section" v-if="advantages.length">
+      <h2 class="animate-in">{{ advantagesTitle }}</h2>
+      <div class="advantages-grid">
+        <div v-for="(item, i) in advantages" :key="item.title" class="advantage-card animate-in" :style="{ animationDelay: (0.1 * (i + 1)) + 's' }">
+          <div class="advantage-icon">{{ item.icon }}</div>
+          <div class="advantage-title">{{ item.title }}</div>
+          <div class="advantage-desc">{{ item.description }}</div>
+          <span class="advantage-tag">{{ item.tag }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="pricing-section" v-if="publicPlans.length">
+      <h2 class="animate-in delay-3">{{ pricingTitle }}</h2>
+      <div class="pricing-grid">
+        <div v-for="(p, i) in publicPlans" :key="p.id" class="pricing-card animate-in delay-4" :class="{ featured: p.name === 'Pro' }" :style="{ animationDelay: (0.3 + i * 0.1) + 's' }">
+          <div class="pricing-name">{{ p.name }}</div>
+          <div class="pricing-price">¥{{ p.price }}<span>{{ t('pricing.perMonth') }}</span></div>
+          <div class="pricing-desc">{{ p.description }}</div>
+          <ul class="pricing-features">
+            <li>{{ t('pricing.requests5h', { n: p.requests_per_5h }) }}</li>
+            <li>{{ t('pricing.requestsMonth', { n: p.requests_per_month }) }}</li>
+            <li v-for="f in parseFeatures(p.features).filter(function(f){ return !String(f).startsWith('model:'); })" :key="f">{{ f }}</li>
+            <li>{{ t('pricing.noWeeklyLimit') }}</li>
+          </ul>
+          <button class="btn btn-primary btn-block" @click="navigate('register')">{{ t('pricing.cta') }}</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-section" v-if="faqs.length">
+      <h2 class="animate-in">{{ faqTitle }}</h2>
+      <div v-for="(faq, i) in faqs" :key="i" class="faq-item animate-in" :class="{ open: faq.open }" :style="{ animationDelay: (0.1 * i) + 's' }" @click="faq.open = !faq.open">
+        <div class="faq-question">
+          <span>{{ faq.q }}</span>
+          <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
+        <div class="faq-answer">{{ faq.a }}</div>
+      </div>
+    </div>
+
+    <div class="contact-section">
+      <p>{{ contactHint }}<span>{{ adminContact || t('auth.contactAdmin') }}</span></p>
+    </div>
+  </div>
+
+  <!-- Login -->
+  <div v-if="currentPage === 'login'" class="auth-container">
+    <div class="auth-box">
+      <h2>{{ t('auth.welcomeBack') }}</h2>
+      <p class="subtitle">{{ t('auth.loginSubtitle') }}</p>
+      <div v-if="authError" class="error-text">{{ authError }}</div>
+      <input v-model="loginForm.username" class="coplan-input" :placeholder="t('auth.username')" @keyup.enter="doLogin" />
+      <input v-model="loginForm.password" class="coplan-input" type="password" :placeholder="t('auth.password')" @keyup.enter="doLogin" />
+      <button class="btn btn-primary btn-block" @click="doLogin" :disabled="loading">{{ t('auth.login') }}</button>
+      <div class="auth-switch">{{ t('auth.noAccount') }} <a @click="navigate('register')">{{ t('auth.register') }}</a></div>
+    </div>
+  </div>
+
+  <!-- Register -->
+  <div v-if="currentPage === 'register'" class="auth-container">
+    <div class="auth-box">
+      <h2>{{ t('auth.registerTitle') }}</h2>
+      <p class="subtitle">{{ t('auth.registerSubtitle') }}</p>
+      <div v-if="authError" class="error-text">{{ authError }}</div>
+      <input v-model="registerForm.username" class="coplan-input" :placeholder="t('auth.usernameHint')" />
+      <input v-model="registerForm.email" class="coplan-input" :placeholder="t('auth.email')" />
+      <input v-model="registerForm.password" class="coplan-input" type="password" :placeholder="t('auth.passwordHint')" />
+      <button class="btn btn-primary btn-block" @click="doRegister" :disabled="loading">{{ t('auth.register') }}</button>
+      <div class="auth-switch">{{ t('auth.hasAccount') }} <a @click="navigate('login')">{{ t('auth.login') }}</a></div>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div v-if="currentPage === 'dashboard'" class="dashboard">
+    <div class="dash-header">
+      <div>
+        <h1>{{ t('dash.title') }}</h1>
+        <div class="dash-user">{{ t('dash.welcome', { name: me?.username || '-' }) }}</div>
+      </div>
+      <button class="btn btn-sm btn-outline" @click="navigate('home')">{{ t('dash.backHome') }}</button>
+    </div>
+
+    <div class="tabs">
+      <div class="tab" :class="{ active: dashTab === 'overview' }" @click="dashTab = 'overview'">{{ t('dash.tab.overview') }}</div>
+      <div class="tab" :class="{ active: dashTab === 'usage' }" @click="dashTab = 'usage'">{{ t('dash.tab.usage') }}</div>
+      <div class="tab" :class="{ active: dashTab === 'keys' }" @click="dashTab = 'keys'">{{ t('dash.tab.keys') }}</div>
+      <div class="tab" :class="{ active: dashTab === 'strategies' }" @click="dashTab = 'strategies'; loadStrategies()">{{ t('dash.tab.strategies') }}</div>
+      <div class="tab" :class="{ active: dashTab === 'market' }" @click="dashTab = 'market'; loadMarket()">{{ t('dash.tab.market') }}</div>
+      <div class="tab" :class="{ active: dashTab === 'plans' }" @click="dashTab = 'plans'">{{ t('dash.tab.plans') }}</div>
+      <div class="tab" :class="{ active: dashTab === 'security' }" @click="dashTab = 'security'">{{ t('dash.tab.security') }}</div>
+    </div>
+
+    <div v-if="dashTab === 'overview'">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">{{ t('dash.plan.current') }}</div><div class="stat-value">{{ activePlan?.name || t('dash.plan.none') }}</div><div v-if="activePlan" class="stat-sub">¥{{ activePlan.price }}</div></div>
+        <div class="stat-card"><div class="stat-label">{{ t('dash.usedMonth') }}</div><div class="stat-value">{{ currentUsage?.requests_month || 0 }}</div><div class="stat-sub">/ {{ activePlan?.requests_per_month || 0 }} {{ t('dash.times') }}</div><div v-if="activePlan" class="progress-bar"><div class="progress-fill" :class="progressClass(monthUsagePercent)" :style="{ width: Math.min(monthUsagePercent, 100) + '%' }"></div></div></div>
+        <div class="stat-card"><div class="stat-label">{{ t('dash.used5h') }}</div><div class="stat-value">{{ currentUsage?.requests_5h || 0 }}</div><div class="stat-sub">/ {{ activePlan?.requests_per_5h || 0 }} {{ t('dash.times') }}</div><div v-if="activePlan" class="progress-bar"><div class="progress-fill" :class="progressClass(fiveHourUsagePercent)" :style="{ width: Math.min(fiveHourUsagePercent, 100) + '%' }"></div></div></div>
+        <div class="stat-card"><div class="stat-label">{{ t('dash.totalRequests') }}</div><div class="stat-value">{{ totalUsage?.total_requests || 0 }}</div></div>
+      </div>
+      <div v-if="!activePlan" class="card card-warning">
+        <div class="text-sm">{{ t('dash.noPlan') }}</div>
+        <div class="mt-8 text-sm text-muted">{{ adminContact || t('auth.contactAdmin') }}</div>
+      </div>
+    </div>
+
+    <div v-if="dashTab === 'usage'">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">{{ t('dash.usageTrend') }}</span>
+          <CoplanSelect v-model="usageDays" @change="loadUsage">
+            <option value="7">{{ t('dash.days7') }}</option>
+            <option value="30">{{ t('dash.days30') }}</option>
+            <option value="90">{{ t('dash.days90') }}</option>
+          </CoplanSelect>
+        </div>
+        <div class="chart-container"><canvas ref="usageChart"></canvas></div>
+      </div>
+      <div class="stats-grid stats-grid-tight">
+        <div class="stat-card"><div class="stat-label">{{ t('dash.inputTokens') }}</div><div class="stat-value">{{ formatNumber(totalUsage?.total_input_tokens || 0) }}</div></div>
+        <div class="stat-card"><div class="stat-label">{{ t('dash.outputTokens') }}</div><div class="stat-value">{{ formatNumber(totalUsage?.total_output_tokens || 0) }}</div></div>
+      </div>
+    </div>
+
+    <div v-if="dashTab === 'keys'">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">{{ t('dash.keysTitle') }}</span>
+          <button class="btn btn-sm btn-primary" @click="showGenerateKey">{{ t('dash.keysGenerate') }}</button>
+        </div>
+        <div v-if="newKey" class="card mb-16 key-reveal-card">
+          <div class="text-sm key-reveal-title">{{ t('dash.keyNew') }}</div>
+          <div class="mono text-sm mt-8 key-reveal-body"><span>{{ newKey }}</span><button class="btn btn-sm btn-outline" @click="copyText(newKey)">{{ t('dash.copy') }}</button></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>{{ t('dash.keyCol') }}</th><th>{{ t('dash.labelCol') }}</th><th>{{ t('dash.strategyGroupCol') }}</th><th>{{ t('dash.statusCol') }}</th><th>{{ t('dash.createdCol') }}</th><th>{{ t('dash.actionsCol') }}</th></tr></thead>
+            <tbody>
+              <tr v-for="k in myKeys" :key="k.id">
+                <td class="mono text-sm key-cell">
+                  <span v-if="revealedKeys.includes(k.id)" class="key-full">{{ k.key }}</span>
+                  <span v-else class="key-mask" @click="revealedKeys.push(k.id)">{{ maskKey(k.key) }}</span>
+                  <button class="btn btn-sm btn-outline key-copy-btn" @click="copyText(k.key)">{{ t('dash.copy') }}</button>
+                </td>
+                <td class="text-sm">{{ k.label || '-' }}</td>
+                <td class="text-sm text-muted">{{ k.strategy_group_id || '-' }}</td>
+                <td><span class="badge" :class="k.is_active ? 'badge-green' : 'badge-red'">{{ k.is_active ? t('dash.active') : t('dash.revoked') }}</span></td>
+                <td class="text-sm text-muted">{{ k.created_at }}</td>
+                <td><div class="flex-gap"><button v-if="k.is_active" class="btn btn-sm btn-outline" @click="openKeyConfig(k)">{{ t('dash.keyConfig') }}</button><button v-if="k.is_active" class="btn btn-sm btn-danger" @click="revokeMyKey(k)">{{ t('dash.revoke') }}</button></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-if="!myKeys.length" class="empty-state text-sm">{{ t('dash.noKeys') }}</div>
+      </div>
+    </div>
+
+    <div v-if="dashTab === 'strategies'">
+      <div class="card mb-16">
+        <div class="card-header">
+          <span class="card-title">{{ t('dash.strategiesTitle') }}</span>
+          <button class="btn btn-sm btn-primary" @click="createStrategyGroup">{{ t('dash.strategyCreate') }}</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>{{ t('dash.strategyName') }}</th><th>{{ t('dash.strategyPublicId') }}</th><th>{{ t('dash.strategyRoutes') }}</th><th>{{ t('dash.actionsCol') }}</th></tr></thead>
+            <tbody>
+              <tr v-for="g in myGroups" :key="g.id">
+                <td><strong>{{ g.name }}</strong><div class="text-muted text-sm">{{ g.description || '-' }}</div><span v-if="g.source === 'code'" class="badge badge-blue" style="margin-top:4px">{{ t('dash.strategySystem') }}</span></td>
+                <td class="mono text-sm">{{ g.public_id || '-' }}</td>
+                <td>{{ g.route_count || 0 }}</td>
+                <td><div class="flex-gap"><template v-if="g.source !== 'code'"><button class="btn btn-sm btn-outline" @click="openStrategyEditor(g)">{{ t('dash.strategyEdit') }}</button><button class="btn btn-sm btn-outline" @click="openStrategyKeyBind(g)">{{ t('dash.strategyBindKeys') }}</button><button class="btn btn-sm btn-outline" @click="publishStrategy(g)">{{ t('dash.strategyPublish') }}</button><button class="btn btn-sm btn-danger" @click="deleteStrategy(g)">{{ t('dash.strategyDelete') }}</button></template><span v-else class="text-sm text-muted">{{ t('dash.strategySystemHint') }}</span></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-if="!myGroups.length" class="empty-state text-sm">{{ t('dash.noStrategies') }}</div>
+      </div>
+    </div>
+
+    <div v-if="dashTab === 'market'">
+      <div class="card mb-16">
+        <div class="card-header">
+          <span class="card-title">{{ t('dash.marketTitle') }}</span>
+          <span class="text-sm text-muted">{{ marketEntries.length }} {{ t('dash.marketCount') }}</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>{{ t('dash.marketColName') }}</th><th>{{ t('dash.marketColAuthor') }}</th><th>{{ t('dash.marketColRoutes') }}</th><th>{{ t('dash.marketColForks') }}</th><th>{{ t('dash.actionsCol') }}</th></tr></thead>
+            <tbody>
+              <tr v-for="entry in marketEntries" :key="entry.id">
+                <td><strong>{{ entry.title }}</strong><div class="text-muted text-sm">{{ entry.description || '-' }}</div></td>
+                <td class="text-sm">{{ entry.author || '-' }}</td>
+                <td>{{ entry.route_count || 0 }}</td>
+                <td>{{ entry.fork_count || 0 }}</td>
+                <td>
+                  <div class="flex-gap">
+                    <button class="btn btn-sm btn-outline" @click="viewMarketEntry(entry)">{{ t('dash.marketView') }}</button>
+                    <button class="btn btn-sm btn-primary" @click="forkMarketEntry(entry)">{{ t('dash.marketFork') }}</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-if="!marketEntries.length" class="empty-state text-sm">{{ t('dash.marketEmpty') }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="dashTab === 'plans'">
+      <div class="card">
+        <div class="card-title mb-16">{{ t('dash.myPlans') }}</div>
+        <div v-if="activePlan">
+          <div class="flex-between">
+            <div><strong class="plan-name-lg">{{ activePlan.name }}</strong><span class="badge badge-green plan-badge">{{ t('dash.planActive') }}</span></div>
+            <div class="text-sm text-muted">¥{{ activePlan.price }}</div>
+          </div>
+          <div class="text-sm text-muted mt-8">{{ activePlan.description }}</div>
+          <div class="mt-8 text-sm">{{ t('dash.activatedAt') }}: {{ activePlan.activated_at }}</div>
+          <div v-if="activePlan.expires_at" class="text-sm">{{ t('dash.expiresAt') }}: {{ activePlan.expires_at }}</div>
+        </div>
+        <div v-else class="text-muted text-sm">{{ t('dash.noActivePlan') }}</div>
+      </div>
+      <div class="card">
+        <div class="card-title mb-16">{{ t('dash.planHistory') }}</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>{{ t('dash.planCol') }}</th><th>{{ t('dash.priceCol') }}</th><th>{{ t('dash.activatedCol') }}</th><th>{{ t('dash.statusCol') }}</th></tr></thead>
+            <tbody>
+              <tr v-for="p in planHistory" :key="p.id">
+                <td><strong>{{ p.name }}</strong></td>
+                <td>¥{{ p.price }}</td>
+                <td class="text-sm text-muted">{{ p.activated_at }}</td>
+                <td><span class="badge" :class="p.is_active ? 'badge-green' : 'badge-gray'">{{ p.is_active ? t('dash.planActive') : t('dash.planExpired') }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="dashTab === 'security'">
+      <div class="card security-card">
+        <div class="card-title mb-16">{{ t('dash.securityTitle') }}</div>
+        <div v-if="passwordSuccess" class="text-sm text-success mb-12">✓ {{ t('dash.passwordOk') }}</div>
+        <div v-if="passwordError" class="error-text">{{ passwordError }}</div>
+        <CoplanField v-model="passwordForm.current" type="password" :label="t('dash.passwordCurrent')" :placeholder="t('dash.passwordCurrent')" />
+        <CoplanField v-model="passwordForm.new" type="password" :label="t('dash.passwordNew')" :placeholder="t('dash.passwordMin')" />
+        <CoplanField v-model="passwordForm.confirm" type="password" :label="t('dash.passwordConfirm')" :placeholder="t('dash.passwordConfirm')" />
+        <button class="btn btn-primary" @click="doChangePassword" :disabled="loading">{{ t('dash.passwordChange') }}</button>
+      </div>
+    </div>
+  </div>
+
+  <CoplanDialog v-model="showKeyModal" :title="t('modal.keyTitle')">
+    <CoplanField v-model="keyLabel" :label="t('modal.keyLabel')" :placeholder="t('modal.keyPlaceholder')" />
+    <CoplanSelect v-model="keyStrategyGroupId" :label="t('dash.strategyGroupCol')">
+      <option value="">{{ t('common.optional') }}</option>
+      <option v-for="g in myGroups" :key="g.id" :value="g.id">{{ g.name }} ({{ g.public_id }})</option>
+    </CoplanSelect>
+    <CoplanField v-model="keyAllowedModelsText" type="textarea" :label="t('dash.keyAllowedModels')" :rows="3" :placeholder="t('dash.keyAllowedModelsHint')" />
+    <template v-slot:footer>
+      <button class="btn btn-sm btn-outline" type="button" @click="showKeyModal = false">{{ t('modal.cancel') }}</button>
+      <button class="btn btn-sm btn-primary" type="button" @click="doGenerateKey" :disabled="loading">{{ t('modal.generate') }}</button>
+    </template>
+  </CoplanDialog>
+
+  <CoplanDialog v-model="showKeyConfigModal" :title="t('dash.keyConfig')" size="wide">
+    <CoplanSelect v-model="keyConfigForm.strategy_group_id" :label="t('dash.strategyGroupCol')">
+      <option value="">{{ t('common.optional') }}</option>
+      <option v-for="g in myGroups" :key="g.id" :value="g.id">{{ g.name }}</option>
+    </CoplanSelect>
+    <CoplanField v-model="keyConfigForm.allowed_models_text" type="textarea" :label="t('dash.keyAllowedModels')" :rows="4" :placeholder="t('dash.keyAllowedModelsHint')" />
+    <template v-slot:footer>
+      <button class="btn btn-sm btn-outline" type="button" @click="showKeyConfigModal = false">{{ t('modal.cancel') }}</button>
+      <button class="btn btn-sm btn-primary" type="button" @click="saveKeyConfig" :disabled="loading">{{ t('admin.save') }}</button>
+    </template>
+  </CoplanDialog>
+
+  <CoplanDialog v-model="showStrategyModal" :title="strategyTarget ? strategyTarget.name : t('dash.strategyEdit')" size="wide">
+    <CoplanField v-model="strategyCode" type="textarea" :label="t('dash.strategyCode')" :rows="14" input-class="mono spec-textarea" />
+    <div class="text-sm text-muted mt-8 mb-8 coplan-hint-text">{{ t('dash.strategyCodeHint', { prefix: strategyPrefix }) }}</div>
+    <CoplanField v-model="compiledSpecText" type="textarea" :label="t('dash.compiledSpec')" :rows="8" input-class="mono spec-textarea" :readonly="true" />
+    <template v-slot:footer>
+      <button class="btn btn-sm btn-outline" type="button" @click="showStrategyModal = false">{{ t('modal.cancel') }}</button>
+      <button class="btn btn-sm btn-outline" type="button" @click="validateStrategyCode" :disabled="loading">{{ t('dash.strategyValidate') }}</button>
+      <button class="btn btn-sm btn-primary" type="button" @click="saveStrategyCode" :disabled="loading">{{ t('dash.strategySaveCompile') }}</button>
+    </template>
+  </CoplanDialog>
+
+  <CoplanDialog v-model="showStrategyKeysModal" :title="t('dash.strategyBindKeys') + ' — ' + (strategyKeyTarget?.name || '')">
+    <div class="text-sm text-muted mb-16">{{ t('dash.strategyBindKeysHint') }}</div>
+    <div class="model-chips">
+      <span v-for="k in myKeys.filter(function(x){ return x.is_active; })" :key="k.id" class="model-chip" :class="{ selected: strategyAllowedKeyIds.includes(k.id) }" @click="toggleStrategyKey(k.id)">{{ k.label || k.id.slice(0, 8) }}</span>
+    </div>
+    <template v-slot:footer>
+      <button class="btn btn-sm btn-outline" type="button" @click="showStrategyKeysModal = false">{{ t('modal.cancel') }}</button>
+      <button class="btn btn-sm btn-primary" type="button" @click="saveStrategyKeyBind" :disabled="loading">{{ t('admin.save') }}</button>
+    </template>
+  </CoplanDialog>
+
+  <CoplanDialog v-model="showMarketEntryModal" :title="marketEntryTarget ? marketEntryTarget.title : t('dash.marketView')" size="wide">
+    <div v-if="marketEntryTarget">
+      <div class="mb-8"><strong>{{ marketEntryTarget.title }}</strong></div>
+      <div class="text-sm text-muted mb-16">{{ marketEntryTarget.description || '-' }}</div>
+      <div class="text-sm mb-4">{{ t('dash.marketColAuthor') }}: {{ marketEntryTarget.author || '-' }}</div>
+      <CoplanField :value="marketEntryTarget.source_code || ''" type="textarea" :label="t('dash.strategyCode')" :rows="14" input-class="mono spec-textarea" :readonly="true" />
+    </div>
+    <template v-slot:footer>
+      <button class="btn btn-sm btn-outline" type="button" @click="showMarketEntryModal = false">{{ t('modal.cancel') }}</button>
+      <button class="btn btn-sm btn-primary" type="button" @click="forkMarketEntry(marketEntryTarget)" :disabled="loading">{{ t('dash.marketFork') }}</button>
+    </template>
+  </CoplanDialog>
+</div>
+
+<script src="/static/plugins/provider-coplan-util/scripts/vendor/coplan-i18n.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/coplan-ui.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/coplan-vue-ui.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/coplan-theme.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/vendor/coplan-charts.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/coplan-app.js"></script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+[
+  {
+    "id": "default",
+    "name": "默认策略组",
+    "description": "通用 coding 任务：客户端别名映射到多平台路由，未命中别名时走 default 回退链",
+    "spec": {
+      "spec_version": 1,
+      "id": "default",
+      "name": "默认策略组",
+      "description": "通用 coding 任务：客户端别名映射到多平台路由，未命中别名时走 default 回退链",
+      "aliases": {
+        "auto": {
+          "match": "auto",
+          "strategy": "round_robin",
+          "routes": [
+            {
+              "model": "deepseek-chat",
+              "platform": "deepseek"
+            },
+            {
+              "model": "llama3.2",
+              "platform": "ollama"
+            },
+            {
+              "model": "claude-3-5-sonnet",
+              "platform": "zen"
+            }
+          ],
+          "description": "均衡轮询多源模型"
+        },
+        "fast": {
+          "match": "fast",
+          "strategy": "fallback",
+          "routes": [
+            {
+              "model": "llama3.2",
+              "platform": "ollama"
+            },
+            {
+              "model": "deepseek-chat",
+              "platform": "deepseek"
+            }
+          ]
+        },
+        "reasoning": {
+          "match": "reasoning",
+          "strategy": "single",
+          "routes": [
+            {
+              "model": "deepseek-reasoner",
+              "platform": "deepseek"
+            }
+          ]
+        }
+      },
+      "constraints": {
+        "platforms": [
+          "deepseek",
+          "ollama",
+          "zen",
+          "openrouter"
+        ],
+        "protocols": [
+          "openai",
+          "anthropic"
+        ]
+      },
+      "limits": {
+        "requests_per_5h": 120,
+        "requests_per_month": 6000
+      },
+      "default": {
+        "match": "*",
+        "strategy": "fallback",
+        "routes": [
+          {
+            "model": "deepseek-chat",
+            "platform": "deepseek"
+          }
+        ]
+      },
+      "source_file": "default.py"
+    },
+    "source": "code",
+    "source_file": "default.py",
+    "keys": [],
+    "created_at": 1783602909,
+    "updated_at": 1783609877
+  }
+]

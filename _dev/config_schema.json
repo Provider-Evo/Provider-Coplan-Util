@@ -1,0 +1,41 @@
+{
+  "type": "object",
+  "properties": {
+    "coplan": {
+      "type": "object",
+      "title": "Coplan 门户文案",
+      "properties": {
+        "hero_tagline": { "type": "string", "title": "首页标语" },
+        "subtitle": { "type": "string", "title": "品牌副标题" },
+        "agents_title": { "type": "string", "title": "Agent 区标题" },
+        "advantages_title": { "type": "string", "title": "优势区标题" },
+        "pricing_title": { "type": "string", "title": "定价区标题" },
+        "faq_title": { "type": "string", "title": "FAQ 标题" },
+        "contact_hint": { "type": "string", "title": "联系区提示" },
+        "admin_contact": { "type": "string", "title": "管理员联系方式" },
+        "content_file": { "type": "string", "title": "自定义 JSON 内容文件（相对插件目录）" },
+        "strategies_dir": { "type": "string", "title": "Python 策略组目录（相对插件目录）", "default": "strategies" },
+        "strategies_dir": { "type": "string", "title": "Python 策略组目录（相对插件目录）", "default": "strategies" }
+      }
+    },
+    "server": {
+      "type": "object",
+      "title": "独立服务",
+      "properties": {
+        "enabled": { "type": "boolean", "title": "启用独立端口" },
+        "host": { "type": "string", "title": "监听地址" },
+        "port": { "type": "integer", "title": "监听端口" },
+        "access_log": { "type": "boolean", "title": "aiohttp 访问日志", "default": false },
+        "access_log": { "type": "boolean", "title": "aiohttp 访问日志", "default": false }
+      }
+    },
+    "admin": {
+      "type": "object",
+      "title": "管理员",
+      "properties": {
+        "username": { "type": "string", "title": "用户名" },
+        "password": { "type": "string", "title": "密码" }
+      }
+    }
+  }
+}
