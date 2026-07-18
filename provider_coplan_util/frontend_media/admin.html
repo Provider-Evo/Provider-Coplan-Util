@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Entropy CodingPlan - Admin</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-  <link rel="stylesheet" href="/static/plugins/provider-coplan-util/styles/coplan.css">
+  <link rel="stylesheet" href="/static/plugins/provider-coplan-util/coplan.css">
 </head>
 <body>
 <div id="app">
@@ -90,8 +90,8 @@
         <div class="page-header"><h1>{{ t('admin.groups') }}</h1><p>{{ t('admin.groupsHintPython') }}</p></div>
         <div class="card mb-16">
           <div class="card-title mb-16">{{ t('admin.newGroup') }}</div>
-          <CoplanField v-model="newGroupName" :label="t('admin.groupName')" placeholder="staging" />
-          <CoplanField v-model="newGroupDesc" :label="t('admin.groupDesc')" :placeholder="t('common.optional')" />
+          <coplan-field v-model="newGroupName" :label="t('admin.groupName')" placeholder="staging" />
+          <coplan-field v-model="newGroupDesc" :label="t('admin.groupDesc')" :placeholder="t('common.optional')" />
           <button class="btn btn-primary" @click="createGroup" :disabled="loading">{{ t('admin.create') }}</button>
         </div>
         <div class="card">
@@ -238,21 +238,21 @@
       <div v-if="page === 'settings'">
         <div class="page-header"><h1>{{ t('admin.settings') }}</h1><p>{{ t('admin.settingsHint') }}</p></div>
         <div class="card settings-card">
-          <CoplanField v-model="settingsForm.admin_contact" :label="t('admin.adminContact')" :placeholder="t('admin.contactPlaceholder')" />
+          <coplan-field v-model="settingsForm.admin_contact" :label="t('admin.adminContact')" :placeholder="t('admin.contactPlaceholder')" />
           <button class="btn btn-primary" @click="saveSettings" :disabled="loading">{{ t('admin.save') }}</button>
         </div>
       </div>
     </main>
   </div>
 
-  <CoplanDialog v-model="showPlanModal" :title="editingPlan ? t('admin.editPlan') : t('admin.newPlan')" size="wide">
-    <CoplanField v-model="planForm.name" :label="t('admin.planName')" placeholder="Pro" />
-    <CoplanField v-model="planForm.price" type="number" :label="t('admin.planPrice')" />
-    <CoplanField v-model="planForm.requests_per_5h" type="number" :label="t('admin.plan5h')" />
-    <CoplanField v-model="planForm.requests_per_month" type="number" :label="t('admin.planMonth')" />
-    <CoplanField v-model="planForm.description" type="textarea" :label="t('admin.col.description')" :rows="3" />
-    <CoplanField v-model="planForm.strategy_id" :label="t('admin.planStrategyId')" placeholder="default" />
-    <CoplanField v-model="planForm.entry_alias" :label="t('admin.planEntryAlias')" placeholder="auto" />
+  <coplan-dialog v-model="showPlanModal" :title="editingPlan ? t('admin.editPlan') : t('admin.newPlan')" size="wide">
+    <coplan-field v-model="planForm.name" :label="t('admin.planName')" placeholder="Pro" />
+    <coplan-field v-model="planForm.price" type="number" :label="t('admin.planPrice')" />
+    <coplan-field v-model="planForm.requests_per_5h" type="number" :label="t('admin.plan5h')" />
+    <coplan-field v-model="planForm.requests_per_month" type="number" :label="t('admin.planMonth')" />
+    <coplan-field v-model="planForm.description" type="textarea" :label="t('admin.col.description')" :rows="3" />
+    <coplan-field v-model="planForm.strategy_id" :label="t('admin.planStrategyId')" placeholder="default" />
+    <coplan-field v-model="planForm.entry_alias" :label="t('admin.planEntryAlias')" placeholder="auto" />
     <div class="coplan-field">
       <label class="coplan-label">{{ t('admin.planModels') }}</label>
       <div class="model-chips">
@@ -260,37 +260,37 @@
       </div>
       <div class="text-muted text-sm mt-8">{{ planForm.selectedModels.length ? planForm.selectedModels.join(', ') : t('admin.allModels') }}</div>
     </div>
-    <CoplanField v-model="planForm.featuresText" type="textarea" :label="t('admin.planBenefits')" :rows="4" :placeholder="t('admin.planBenefitsHint')" />
+    <coplan-field v-model="planForm.featuresText" type="textarea" :label="t('admin.planBenefits')" :rows="4" :placeholder="t('admin.planBenefitsHint')" />
     <template v-slot:footer>
       <button class="btn btn-sm btn-outline" type="button" @click="showPlanModal = false">{{ t('dialog.cancel') }}</button>
       <button class="btn btn-sm btn-primary" type="button" @click="savePlan" :disabled="loading">{{ t('admin.save') }}</button>
     </template>
-  </CoplanDialog>
+  </coplan-dialog>
 
-  <CoplanDialog v-model="showModelModal" :title="t('admin.newModel')">
-    <CoplanField v-model="modelForm.model_id" :label="t('admin.col.modelId')" placeholder="qwen-plus" />
-    <CoplanField v-model="modelForm.display_name" :label="t('admin.col.displayName')" placeholder="Qwen Plus" />
-    <CoplanField v-model="modelForm.description" :label="t('admin.col.description')" />
-    <CoplanField v-model="modelForm.sort_order" type="number" :label="t('admin.col.sort')" />
+  <coplan-dialog v-model="showModelModal" :title="t('admin.newModel')">
+    <coplan-field v-model="modelForm.model_id" :label="t('admin.col.modelId')" placeholder="qwen-plus" />
+    <coplan-field v-model="modelForm.display_name" :label="t('admin.col.displayName')" placeholder="Qwen Plus" />
+    <coplan-field v-model="modelForm.description" :label="t('admin.col.description')" />
+    <coplan-field v-model="modelForm.sort_order" type="number" :label="t('admin.col.sort')" />
     <template v-slot:footer>
       <button class="btn btn-sm btn-outline" type="button" @click="showModelModal = false">{{ t('dialog.cancel') }}</button>
       <button class="btn btn-sm btn-primary" type="button" @click="saveModel" :disabled="loading">{{ t('admin.save') }}</button>
     </template>
-  </CoplanDialog>
+  </coplan-dialog>
 
-  <CoplanDialog v-model="showMarketSpecModal" :title="t('admin.marketCodeTitle') + ' — ' + (marketSpecTarget?.title || '')" size="wide">
-    <CoplanField v-model="marketSpecText" type="textarea" :label="t('admin.strategyPython')" :rows="18" input-class="mono spec-textarea" :readonly="true" />
+  <coplan-dialog v-model="showMarketSpecModal" :title="t('admin.marketCodeTitle') + ' — ' + (marketSpecTarget?.title || '')" size="wide">
+    <coplan-field v-model="marketSpecText" type="textarea" :label="t('admin.strategyPython')" :rows="18" input-class="mono spec-textarea" :readonly="true" />
     <template v-slot:footer>
       <button class="btn btn-sm btn-outline" type="button" @click="showMarketSpecModal = false">{{ t('admin.close') }}</button>
     </template>
-  </CoplanDialog>
+  </coplan-dialog>
 
-  <CoplanDialog v-model="showCodeModal" :title="(codeReadonly ? t('admin.viewCode') : t('admin.editCode')) + ' — ' + (codeTarget?.name || '')" size="wide">
+  <coplan-dialog v-model="showCodeModal" :title="(codeReadonly ? t('admin.viewCode') : t('admin.editCode')) + ' — ' + (codeTarget?.name || '')" size="wide">
     <div class="text-sm text-muted mb-16" v-if="codeTarget?.source === 'code'">
       {{ t('admin.specCodeHint', { file: codeTarget?.source_file || 'strategies/' }) }}
     </div>
     <div class="text-sm text-muted mb-16 coplan-hint-text" v-else>{{ t('admin.strategyPythonHint') }}</div>
-    <CoplanField
+    <coplan-field
       v-model="strategyCode"
       type="textarea"
       :label="t('admin.strategyPython')"
@@ -298,7 +298,7 @@
       input-class="mono spec-textarea"
       :readonly="codeReadonly"
     />
-    <CoplanField
+    <coplan-field
       v-model="compiledSpecText"
       type="textarea"
       :label="t('admin.compiledSpec')"
@@ -311,9 +311,9 @@
       <button v-if="!codeReadonly" class="btn btn-sm btn-outline" type="button" @click="validateStrategyCode" :disabled="loading">{{ t('admin.validateCompile') }}</button>
       <button v-if="!codeReadonly" class="btn btn-sm btn-primary" type="button" @click="saveStrategyCode" :disabled="loading">{{ t('admin.strategySaveCompile') }}</button>
     </template>
-  </CoplanDialog>
+  </coplan-dialog>
 
-  <CoplanDialog v-model="showKeysModal" :title="t('admin.groupKeys') + ' - ' + (keysTarget?.name || '')">
+  <coplan-dialog v-model="showKeysModal" :title="t('admin.groupKeys') + ' - ' + (keysTarget?.name || '')">
     <div v-if="newKey" class="card mb-16 key-reveal-card">
       <div class="text-sm key-reveal-title">{{ t('admin.newKeyHint') }}</div>
       <div class="mono text-sm mt-8 key-reveal-body">{{ newKey }}</div>
@@ -336,13 +336,18 @@
     <template v-slot:footer>
       <button class="btn btn-sm btn-outline" type="button" @click="showKeysModal = false">{{ t('admin.close') }}</button>
     </template>
-  </CoplanDialog>
+  </coplan-dialog>
 </div>
 
 <script src="/static/plugins/provider-coplan-util/scripts/vendor/coplan-i18n.js"></script>
-<script src="/static/plugins/provider-coplan-util/scripts/coplan-ui.js"></script>
-<script src="/static/plugins/provider-coplan-util/scripts/coplan-vue-ui.js"></script>
-<script src="/static/plugins/provider-coplan-util/scripts/coplan-theme.js"></script>
-<script src="/static/plugins/provider-coplan-util/scripts/coplan-admin.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/core/ui/ui.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/core/ui/vueui_helpers.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/core/ui/vueui.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/core/ui/theme.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/core/admin/utils.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/core/admin/group_actions.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/core/admin/plan_model.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/core/admin/mkt_config.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/core/admin.js"></script>
 </body>
 </html>

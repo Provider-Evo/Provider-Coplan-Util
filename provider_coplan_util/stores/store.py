@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from provider_coplan_util import generate_api_key
-from provider_coplan_util.spec import empty_spec, normalize_group
+from provider_coplan_util.support.contracts import empty_spec, normalize_group
 
 __all__ = ["StrategyStore"]
 
@@ -28,8 +28,8 @@ class StrategyStore:
     def __init__(self, data_dir: Path) -> None:
         self._dir = data_dir
         self._dir.mkdir(parents=True, exist_ok=True)
-        self._groups_path = self._dir / "strategy_groups.json"
-        self._settings_path = self._dir / "settings.json"
+        self._groups_path = self._dir / "strat_groups.json"
+        self._settings_path = self._dir / "setting.json"
         if not self._groups_path.is_file():
             self._groups_path.write_text("[]", encoding="utf-8")
         if not self._settings_path.is_file():
@@ -252,7 +252,7 @@ class StrategyStore:
         raise KeyError(group_id)
 
     def get_group_source_code(self, group: Dict[str, Any]) -> str:
-        from provider_coplan_util.user_strategy import DEFAULT_USER_STRATEGY_TEMPLATE, spec_to_source_code
+        from provider_coplan_util.routing.user_strat import DEFAULT_USER_STRATEGY_TEMPLATE, spec_to_source_code
 
         stored = str(group.get("source_code") or "").strip()
         if stored:

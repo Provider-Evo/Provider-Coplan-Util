@@ -138,6 +138,51 @@ def _defaults() -> CoplanConfig:
     )
 
 
+def _apply_toml_sections(cfg: CoplanConfig, raw: Any) -> Dict[str, Any]:
+    """把 [coplan]/[server]/[admin] 三个 TOML section 的值套用到 cfg 上，返回 coplan section。"""
+    coplan = _section(raw, "coplan")
+    server = _section(raw, "server")
+    admin = _section(raw, "admin")
+
+    cfg.hero_tagline = str(coplan.get("hero_tagline") or cfg.hero_tagline).strip() or DEFAULT_HERO_TAGLINE
+    cfg.subtitle = str(coplan.get("subtitle") or cfg.subtitle).strip()
+    cfg.agents_title = str(coplan.get("agents_title") or cfg.agents_title).strip()
+    cfg.advantages_title = str(coplan.get("advantages_title") or cfg.advantages_title).strip()
+    cfg.pricing_title = str(coplan.get("pricing_title") or cfg.pricing_title).strip()
+    cfg.faq_title = str(coplan.get("faq_title") or cfg.faq_title).strip()
+    cfg.contact_hint = str(coplan.get("contact_hint") or cfg.contact_hint).strip()
+    cfg.admin_contact = str(coplan.get("admin_contact") or cfg.admin_contact).strip()
+    cfg.standalone_enabled = _as_bool(server.get("enabled"), cfg.standalone_enabled)
+    cfg.standalone_host = str(server.get("host") or cfg.standalone_host).strip() or "127.0.0.1"
+    cfg.standalone_port = _as_int(server.get("port"), cfg.standalone_port)
+    cfg.standalone_access_log = _as_bool(server.get("access_log"), cfg.standalone_access_log)
+    cfg.standalone_startup_force_kill_port = _as_bool(server.get("startup_force_kill_port"), cfg.standalone_startup_force_kill_port)
+    cfg.admin_username = str(admin.get("username") or cfg.admin_username).strip() or DEFAULT_ADMIN_USERNAME
+    cfg.admin_password = str(admin.get("password") or cfg.admin_password)
+    cfg.strategies_dir = str(coplan.get("strategies_dir") or cfg.strategies_dir).strip() or "strategies"
+    return coplan
+
+
+def _apply_content_file(cfg: CoplanConfig, plugin_dir: Path, coplan: Dict[str, Any]) -> None:
+    """按 [coplan].content_file 指向的 JSON 文件覆盖 agents/advantages/faqs/platforms。"""
+    content_file = str(coplan.get("content_file") or "").strip()
+    if not content_file:
+        return
+    content_path = plugin_dir / content_file
+    agents = _load_json_list(content_path, "agents")
+    advantages = _load_json_list(content_path, "advantages")
+    faqs = _load_json_list(content_path, "faqs")
+    platforms = _load_json_list(content_path, "platforms")
+    if agents:
+        cfg.agents = agents
+    if advantages:
+        cfg.advantages = advantages
+    if faqs:
+        cfg.faqs = faqs
+    if platforms and all(isinstance(p, str) for p in platforms):
+        cfg.platforms = platforms
+
+
 def load_coplan_config(plugin_dir: Path) -> CoplanConfig:
     """读取插件目录下 config.toml；缺失时使用默认值。"""
     cfg = _defaults()
@@ -148,42 +193,8 @@ def load_coplan_config(plugin_dir: Path) -> CoplanConfig:
         import tomlkit
 
         raw = tomlkit.loads(path.read_text(encoding="utf-8"))
-        coplan = _section(raw, "coplan")
-        server = _section(raw, "server")
-        admin = _section(raw, "admin")
-
-        cfg.hero_tagline = str(coplan.get("hero_tagline") or cfg.hero_tagline).strip() or DEFAULT_HERO_TAGLINE
-        cfg.subtitle = str(coplan.get("subtitle") or cfg.subtitle).strip()
-        cfg.agents_title = str(coplan.get("agents_title") or cfg.agents_title).strip()
-        cfg.advantages_title = str(coplan.get("advantages_title") or cfg.advantages_title).strip()
-        cfg.pricing_title = str(coplan.get("pricing_title") or cfg.pricing_title).strip()
-        cfg.faq_title = str(coplan.get("faq_title") or cfg.faq_title).strip()
-        cfg.contact_hint = str(coplan.get("contact_hint") or cfg.contact_hint).strip()
-        cfg.admin_contact = str(coplan.get("admin_contact") or cfg.admin_contact).strip()
-        cfg.standalone_enabled = _as_bool(server.get("enabled"), cfg.standalone_enabled)
-        cfg.standalone_host = str(server.get("host") or cfg.standalone_host).strip() or "127.0.0.1"
-        cfg.standalone_port = _as_int(server.get("port"), cfg.standalone_port)
-        cfg.standalone_access_log = _as_bool(server.get("access_log"), cfg.standalone_access_log)
-        cfg.standalone_startup_force_kill_port = _as_bool(server.get("startup_force_kill_port"), cfg.standalone_startup_force_kill_port)
-        cfg.admin_username = str(admin.get("username") or cfg.admin_username).strip() or DEFAULT_ADMIN_USERNAME
-        cfg.admin_password = str(admin.get("password") or cfg.admin_password)
-        cfg.strategies_dir = str(coplan.get("strategies_dir") or cfg.strategies_dir).strip() or "strategies"
-
-        content_file = str(coplan.get("content_file") or "").strip()
-        if content_file:
-            content_path = plugin_dir / content_file
-            agents = _load_json_list(content_path, "agents")
-            advantages = _load_json_list(content_path, "advantages")
-            faqs = _load_json_list(content_path, "faqs")
-            platforms = _load_json_list(content_path, "platforms")
-            if agents:
-                cfg.agents = agents
-            if advantages:
-                cfg.advantages = advantages
-            if faqs:
-                cfg.faqs = faqs
-            if platforms and all(isinstance(p, str) for p in platforms):
-                cfg.platforms = platforms
+        coplan = _apply_toml_sections(cfg, raw)
+        _apply_content_file(cfg, plugin_dir, coplan)
     except Exception as exc:
         logger.warning(
             "Coplan config.toml 解析失败（%s），已回退默认值；"

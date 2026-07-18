@@ -6,7 +6,7 @@
   <title>Entropy CodingPlan</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="/static/plugins/provider-coplan-util/styles/coplan.css">
+  <link rel="stylesheet" href="/static/plugins/provider-coplan-util/coplan.css">
 </head>
 <body>
 <div id="app">
@@ -162,11 +162,11 @@
       <div class="card">
         <div class="card-header">
           <span class="card-title">{{ t('dash.usageTrend') }}</span>
-          <CoplanSelect v-model="usageDays" @change="loadUsage">
+          <coplan-select v-model="usageDays" @change="loadUsage">
             <option value="7">{{ t('dash.days7') }}</option>
             <option value="30">{{ t('dash.days30') }}</option>
             <option value="90">{{ t('dash.days90') }}</option>
-          </CoplanSelect>
+          </coplan-select>
         </div>
         <div class="chart-container"><canvas ref="usageChart"></canvas></div>
       </div>
@@ -298,51 +298,51 @@
         <div class="card-title mb-16">{{ t('dash.securityTitle') }}</div>
         <div v-if="passwordSuccess" class="text-sm text-success mb-12">✓ {{ t('dash.passwordOk') }}</div>
         <div v-if="passwordError" class="error-text">{{ passwordError }}</div>
-        <CoplanField v-model="passwordForm.current" type="password" :label="t('dash.passwordCurrent')" :placeholder="t('dash.passwordCurrent')" />
-        <CoplanField v-model="passwordForm.new" type="password" :label="t('dash.passwordNew')" :placeholder="t('dash.passwordMin')" />
-        <CoplanField v-model="passwordForm.confirm" type="password" :label="t('dash.passwordConfirm')" :placeholder="t('dash.passwordConfirm')" />
+        <coplan-field v-model="passwordForm.current" type="password" :label="t('dash.passwordCurrent')" :placeholder="t('dash.passwordCurrent')" />
+        <coplan-field v-model="passwordForm.new" type="password" :label="t('dash.passwordNew')" :placeholder="t('dash.passwordMin')" />
+        <coplan-field v-model="passwordForm.confirm" type="password" :label="t('dash.passwordConfirm')" :placeholder="t('dash.passwordConfirm')" />
         <button class="btn btn-primary" @click="doChangePassword" :disabled="loading">{{ t('dash.passwordChange') }}</button>
       </div>
     </div>
   </div>
 
-  <CoplanDialog v-model="showKeyModal" :title="t('modal.keyTitle')">
-    <CoplanField v-model="keyLabel" :label="t('modal.keyLabel')" :placeholder="t('modal.keyPlaceholder')" />
-    <CoplanSelect v-model="keyStrategyGroupId" :label="t('dash.strategyGroupCol')">
+  <coplan-dialog v-model="showKeyModal" :title="t('modal.keyTitle')">
+    <coplan-field v-model="keyLabel" :label="t('modal.keyLabel')" :placeholder="t('modal.keyPlaceholder')" />
+    <coplan-select v-model="keyStrategyGroupId" :label="t('dash.strategyGroupCol')">
       <option value="">{{ t('common.optional') }}</option>
       <option v-for="g in myGroups" :key="g.id" :value="g.id">{{ g.name }} ({{ g.public_id }})</option>
-    </CoplanSelect>
-    <CoplanField v-model="keyAllowedModelsText" type="textarea" :label="t('dash.keyAllowedModels')" :rows="3" :placeholder="t('dash.keyAllowedModelsHint')" />
+    </coplan-select>
+    <coplan-field v-model="keyAllowedModelsText" type="textarea" :label="t('dash.keyAllowedModels')" :rows="3" :placeholder="t('dash.keyAllowedModelsHint')" />
     <template v-slot:footer>
       <button class="btn btn-sm btn-outline" type="button" @click="showKeyModal = false">{{ t('modal.cancel') }}</button>
       <button class="btn btn-sm btn-primary" type="button" @click="doGenerateKey" :disabled="loading">{{ t('modal.generate') }}</button>
     </template>
-  </CoplanDialog>
+  </coplan-dialog>
 
-  <CoplanDialog v-model="showKeyConfigModal" :title="t('dash.keyConfig')" size="wide">
-    <CoplanSelect v-model="keyConfigForm.strategy_group_id" :label="t('dash.strategyGroupCol')">
+  <coplan-dialog v-model="showKeyConfigModal" :title="t('dash.keyConfig')" size="wide">
+    <coplan-select v-model="keyConfigForm.strategy_group_id" :label="t('dash.strategyGroupCol')">
       <option value="">{{ t('common.optional') }}</option>
       <option v-for="g in myGroups" :key="g.id" :value="g.id">{{ g.name }}</option>
-    </CoplanSelect>
-    <CoplanField v-model="keyConfigForm.allowed_models_text" type="textarea" :label="t('dash.keyAllowedModels')" :rows="4" :placeholder="t('dash.keyAllowedModelsHint')" />
+    </coplan-select>
+    <coplan-field v-model="keyConfigForm.allowed_models_text" type="textarea" :label="t('dash.keyAllowedModels')" :rows="4" :placeholder="t('dash.keyAllowedModelsHint')" />
     <template v-slot:footer>
       <button class="btn btn-sm btn-outline" type="button" @click="showKeyConfigModal = false">{{ t('modal.cancel') }}</button>
       <button class="btn btn-sm btn-primary" type="button" @click="saveKeyConfig" :disabled="loading">{{ t('admin.save') }}</button>
     </template>
-  </CoplanDialog>
+  </coplan-dialog>
 
-  <CoplanDialog v-model="showStrategyModal" :title="strategyTarget ? strategyTarget.name : t('dash.strategyEdit')" size="wide">
-    <CoplanField v-model="strategyCode" type="textarea" :label="t('dash.strategyCode')" :rows="14" input-class="mono spec-textarea" />
+  <coplan-dialog v-model="showStrategyModal" :title="strategyTarget ? strategyTarget.name : t('dash.strategyEdit')" size="wide">
     <div class="text-sm text-muted mt-8 mb-8 coplan-hint-text">{{ t('dash.strategyCodeHint', { prefix: strategyPrefix }) }}</div>
-    <CoplanField v-model="compiledSpecText" type="textarea" :label="t('dash.compiledSpec')" :rows="8" input-class="mono spec-textarea" :readonly="true" />
+    <coplan-field v-model="strategyCode" type="textarea" :label="t('dash.strategyCode')" :rows="14" input-class="mono spec-textarea" />
+    <coplan-field v-model="compiledSpecText" type="textarea" :label="t('dash.compiledSpec')" :rows="8" input-class="mono spec-textarea" :readonly="true" />
     <template v-slot:footer>
       <button class="btn btn-sm btn-outline" type="button" @click="showStrategyModal = false">{{ t('modal.cancel') }}</button>
       <button class="btn btn-sm btn-outline" type="button" @click="validateStrategyCode" :disabled="loading">{{ t('dash.strategyValidate') }}</button>
       <button class="btn btn-sm btn-primary" type="button" @click="saveStrategyCode" :disabled="loading">{{ t('dash.strategySaveCompile') }}</button>
     </template>
-  </CoplanDialog>
+  </coplan-dialog>
 
-  <CoplanDialog v-model="showStrategyKeysModal" :title="t('dash.strategyBindKeys') + ' — ' + (strategyKeyTarget?.name || '')">
+  <coplan-dialog v-model="showStrategyKeysModal" :title="t('dash.strategyBindKeys') + ' — ' + (strategyKeyTarget?.name || '')">
     <div class="text-sm text-muted mb-16">{{ t('dash.strategyBindKeysHint') }}</div>
     <div class="model-chips">
       <span v-for="k in myKeys.filter(function(x){ return x.is_active; })" :key="k.id" class="model-chip" :class="{ selected: strategyAllowedKeyIds.includes(k.id) }" @click="toggleStrategyKey(k.id)">{{ k.label || k.id.slice(0, 8) }}</span>
@@ -351,27 +351,34 @@
       <button class="btn btn-sm btn-outline" type="button" @click="showStrategyKeysModal = false">{{ t('modal.cancel') }}</button>
       <button class="btn btn-sm btn-primary" type="button" @click="saveStrategyKeyBind" :disabled="loading">{{ t('admin.save') }}</button>
     </template>
-  </CoplanDialog>
+  </coplan-dialog>
 
-  <CoplanDialog v-model="showMarketEntryModal" :title="marketEntryTarget ? marketEntryTarget.title : t('dash.marketView')" size="wide">
+  <coplan-dialog v-model="showMarketEntryModal" :title="marketEntryTarget ? marketEntryTarget.title : t('dash.marketView')" size="wide">
     <div v-if="marketEntryTarget">
       <div class="mb-8"><strong>{{ marketEntryTarget.title }}</strong></div>
       <div class="text-sm text-muted mb-16">{{ marketEntryTarget.description || '-' }}</div>
       <div class="text-sm mb-4">{{ t('dash.marketColAuthor') }}: {{ marketEntryTarget.author || '-' }}</div>
-      <CoplanField :value="marketEntryTarget.source_code || ''" type="textarea" :label="t('dash.strategyCode')" :rows="14" input-class="mono spec-textarea" :readonly="true" />
+      <coplan-field :value="marketEntryTarget.source_code || ''" type="textarea" :label="t('dash.strategyCode')" :rows="14" input-class="mono spec-textarea" :readonly="true" />
     </div>
     <template v-slot:footer>
       <button class="btn btn-sm btn-outline" type="button" @click="showMarketEntryModal = false">{{ t('modal.cancel') }}</button>
       <button class="btn btn-sm btn-primary" type="button" @click="forkMarketEntry(marketEntryTarget)" :disabled="loading">{{ t('dash.marketFork') }}</button>
     </template>
-  </CoplanDialog>
+  </coplan-dialog>
 </div>
 
 <script src="/static/plugins/provider-coplan-util/scripts/vendor/coplan-i18n.js"></script>
-<script src="/static/plugins/provider-coplan-util/scripts/coplan-ui.js"></script>
-<script src="/static/plugins/provider-coplan-util/scripts/coplan-vue-ui.js"></script>
-<script src="/static/plugins/provider-coplan-util/scripts/coplan-theme.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/core/ui/ui.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/core/ui/vueui_helpers.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/core/ui/vueui.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/core/ui/theme.js"></script>
 <script src="/static/plugins/provider-coplan-util/scripts/vendor/coplan-charts.js"></script>
-<script src="/static/plugins/provider-coplan-util/scripts/coplan-app.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/core/app/utils.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/core/app/strat_actions.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/core/app/dash_actions.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/core/app/key_actions.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/core/app/public_actions.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/core/app/state.js"></script>
+<script src="/static/plugins/provider-coplan-util/scripts/core/app.js"></script>
 </body>
 </html>

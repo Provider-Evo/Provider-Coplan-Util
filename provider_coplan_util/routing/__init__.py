@@ -1,5 +1,5 @@
 """Coplan 路由与策略子包。"""
-from provider_coplan_util.spec import (
+from provider_coplan_util.support.contracts import (
     SPEC_VERSION,
     ROUTING_STRATEGIES,
     STRATEGY_PREFIX,
@@ -15,8 +15,8 @@ from provider_coplan_util.routing.plans import (
 )
 from provider_coplan_util.routing.loader import load_strategy_groups
 from provider_coplan_util.routing.content import build_public_payload
-from provider_coplan_util.auth.standalone import CoplanStandaloneServer
-from provider_coplan_util.routing.user_strategy import (
+from provider_coplan_util.auth.stalone import CoplanStandaloneServer
+from provider_coplan_util.routing.user_strat import (
     DEFAULT_USER_STRATEGY_TEMPLATE,
     build_strategy_template,
     compile_strategy_source,
