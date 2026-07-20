@@ -130,7 +130,7 @@ def _defaults() -> CoplanConfig:
         standalone_startup_force_kill_port=True,
         admin_username=DEFAULT_ADMIN_USERNAME,
         admin_password=DEFAULT_ADMIN_PASSWORD,
-        strategies_dir="strategies",
+        strategies_dir=".",
         agents=list(DEFAULT_AGENTS),
         advantages=list(DEFAULT_ADVANTAGES),
         faqs=list(DEFAULT_FAQS),
@@ -159,7 +159,7 @@ def _apply_toml_sections(cfg: CoplanConfig, raw: Any) -> Dict[str, Any]:
     cfg.standalone_startup_force_kill_port = _as_bool(server.get("startup_force_kill_port"), cfg.standalone_startup_force_kill_port)
     cfg.admin_username = str(admin.get("username") or cfg.admin_username).strip() or DEFAULT_ADMIN_USERNAME
     cfg.admin_password = str(admin.get("password") or cfg.admin_password)
-    cfg.strategies_dir = str(coplan.get("strategies_dir") or cfg.strategies_dir).strip() or "strategies"
+    cfg.strategies_dir = str(coplan.get("strategies_dir") or cfg.strategies_dir).strip() or "."
     return coplan
 
 

@@ -27,7 +27,7 @@
         <button class="btn btn-sm btn-primary" @click="navigate('register')">{{ t('nav.register') }}</button>
       </template>
       <template v-else>
-        <button class="btn btn-sm btn-outline" @click="navigate('dashboard')">{{ t('nav.dashboard') }}</button>
+        <button class="btn btn-sm btn-outline" @click="navigate('dashboard'); loadDashboard()">{{ t('nav.dashboard') }}</button>
         <button class="btn btn-sm btn-outline" @click="doLogout">{{ t('nav.logout') }}</button>
       </template>
     </div>
