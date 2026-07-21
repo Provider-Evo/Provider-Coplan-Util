@@ -21,7 +21,13 @@ from provider_coplan_util.routing.content import (
     DEFAULT_PRICING_TITLE,
 )
 
-from src.foundation.logger import get_logger
+try:
+    from src.foundation.logger import get_logger
+except ImportError:
+    import logging
+
+    def get_logger(name: str) -> logging.Logger:
+        return logging.getLogger(name)
 
 DEFAULT_STANDALONE_PORT = 8787
 DEFAULT_ADMIN_USERNAME = "admin"
