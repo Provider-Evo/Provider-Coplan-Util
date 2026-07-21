@@ -1,0 +1,104 @@
+{
+  "type": "object",
+  "properties": {
+    "coplan": {
+      "type": "object",
+      "title": "Coplan 门户",
+      "properties": {
+        "hero_tagline": {
+          "type": "string",
+          "title": "主标语",
+          "default": ""
+        },
+        "subtitle": {
+          "type": "string",
+          "title": "副标题",
+          "default": ""
+        },
+        "agents_title": {
+          "type": "string",
+          "title": "Agent 区标题",
+          "default": ""
+        },
+        "advantages_title": {
+          "type": "string",
+          "title": "优势区标题",
+          "default": ""
+        },
+        "pricing_title": {
+          "type": "string",
+          "title": "定价区标题",
+          "default": ""
+        },
+        "faq_title": {
+          "type": "string",
+          "title": "FAQ 区标题",
+          "default": ""
+        },
+        "contact_hint": {
+          "type": "string",
+          "title": "联系提示",
+          "default": ""
+        },
+        "admin_contact": {
+          "type": "string",
+          "title": "管理员联系文案",
+          "default": ""
+        },
+        "strategies_dir": {
+          "type": "string",
+          "title": "策略目录",
+          "default": "."
+        }
+      }
+    },
+    "server": {
+      "type": "object",
+      "title": "内置服务",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "title": "启用",
+          "default": true
+        },
+        "host": {
+          "type": "string",
+          "title": "Host",
+          "default": "127.0.0.1"
+        },
+        "port": {
+          "type": "integer",
+          "title": "Port",
+          "default": 8787
+        },
+        "access_log": {
+          "type": "boolean",
+          "title": "访问日志",
+          "default": false
+        },
+        "startup_force_kill_port": {
+          "type": "boolean",
+          "title": "启动时释放端口",
+          "default": true
+        }
+      }
+    },
+    "admin": {
+      "type": "object",
+      "title": "管理账号",
+      "properties": {
+        "username": {
+          "type": "string",
+          "title": "用户名",
+          "default": "admin"
+        },
+        "password": {
+          "type": "string",
+          "title": "密码",
+          "default": ""
+        }
+      }
+    }
+  },
+  "required": []
+}
