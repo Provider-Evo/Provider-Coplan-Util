@@ -1,0 +1,11 @@
+accounts.py
+config.toml
+data/
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+dist/
+build/
+*.egg-info/
+.pytest_cache/

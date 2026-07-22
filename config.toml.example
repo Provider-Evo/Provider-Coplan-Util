@@ -18,4 +18,4 @@ startup_force_kill_port = true
 
 [admin]
 username = "admin"
-password = "a31415926535"
+password = "change-me"
